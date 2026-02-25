@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Gateway 사용자 매뉴얼</title>
+  <style>
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
+      line-height: 1.7;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .container {
+      background-color: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1a1a2e;
+      border-bottom: 3px solid #4361ee;
+      padding-bottom: 15px;
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #1a1a2e;
+      background: linear-gradient(90deg, #4361ee 0%, #7209b7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    h3 {
+      color: #333;
+      margin-top: 25px;
+    }
+    .intro {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 25px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+    .intro p {
+      margin: 0;
+    }
+    .toc {
+      background-color: #f8f9fa;
+      padding: 20px 30px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+    .toc h3 {
+      margin-top: 0;
+      color: #4361ee;
+    }
+    .toc ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .toc li {
+      margin: 8px 0;
+    }
+    .toc a {
+      color: #4361ee;
+      text-decoration: none;
+    }
+    .toc a:hover {
+      text-decoration: underline;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px 15px;
+      text-align: left;
+    }
+    th {
+      background-color: #4361ee;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    .code-block {
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 15px 0;
+    }
+    .code-block .comment {
+      color: #6a9955;
+    }
+    .code-block .string {
+      color: #ce9178;
+    }
+    .code-block .keyword {
+      color: #569cd6;
+    }
+    .code-block .function {
+      color: #dcdcaa;
+    }
+    .ui-box {
+      background-color: #f8f9fa;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 15px 0;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge-blue {
+      background-color: #e7f1ff;
+      color: #4361ee;
+    }
+    .badge-green {
+      background-color: #d4edda;
+      color: #28a745;
+    }
+    .badge-red {
+      background-color: #f8d7da;
+      color: #dc3545;
+    }
+    .badge-orange {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .warning-box {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px 20px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .warning-box strong {
+      color: #856404;
+    }
+    .info-box {
+      background-color: #e7f1ff;
+      border-left: 4px solid #4361ee;
+      padding: 15px 20px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .step-list {
+      counter-reset: step;
+      list-style: none;
+      padding-left: 0;
+    }
+    .step-list li {
+      counter-increment: step;
+      padding: 10px 10px 10px 50px;
+      position: relative;
+      margin-bottom: 10px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+    .step-list li::before {
+      content: counter(step);
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin: 15px 0;
+    }
+    .feature-card {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      padding: 15px;
+    }
+    .feature-card h4 {
+      margin: 0 0 8px 0;
+      color: #4361ee;
+    }
+    .feature-card p {
+      margin: 0;
+      font-size: 13px;
+      color: #666;
+    }
+    .gateway-url {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #4cc9f0;
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-family: 'Consolas', monospace;
+      text-align: center;
+      font-size: 14px;
+      margin: 15px 0;
+    }
+    .contact-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .contact-box h2 {
+      color: white;
+      -webkit-text-fill-color: white;
+      border: none;
+      margin: 0 0 15px 0;
+      padding: 0;
+    }
+    .contact-box a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .footer {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin: 8px 0;
+    }
+    code {
+      background-color: #f1f1f1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      color: #e83e8c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📚 API Gateway 사용자 매뉴얼</h1>
+    
+    <div class="intro">
+      <p>이 문서는 팀 API 키를 발급받고 OpenAI API를 호출하는 방법을 안내합니다.</p>
+    </div>
+
+    <div class="toc">
+      <h3>📋 목차</h3>
+      <ol>
+        <li><a href="#section1">API 키 발급 요청하기</a></li>
+        <li><a href="#section2">발급받은 키 확인하기</a></li>
+        <li><a href="#section3">키 분실 시 조회 요청하기</a></li>
+        <li><a href="#section4">API 호출하기</a></li>
+        <li><a href="#section5">에러 해결</a></li>
+        <li><a href="#section6">문의</a></li>
+      </ol>
+    </div>
+
+    <!-- Section 1 -->
+    <h2 id="section1">1. API 키 발급 요청하기</h2>
+    
+    <h3>1.1 발급 요청 방법</h3>
+    <p><span class="badge badge-blue">API 키</span> 메뉴에서 <strong>[ + 키 발급 신청 ]</strong> 버튼을 클릭합니다.</p>
+    
+    <div class="ui-box">┌─────────────────────────────────────────┐
+│  API 키 관리              [ + 키 발급 신청 ]
+├─────────────────────────────────────────┤
+│                                         │
+│  내 팀: Engineering                     │
+│  발급된 키: 2개                          │
+│                                         │
+└─────────────────────────────────────────┘</div>
+
+    <h3>1.2 필요 기능 선택</h3>
+    <p>발급 신청 시 필요한 기능을 선택합니다.</p>
+    
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>💬 Chat (GPT)</h4>
+        <p>ChatGPT 대화 API<br>용도: 챗봇, 텍스트 생성, 요약</p>
+      </div>
+      <div class="feature-card">
+        <h4>🎨 이미지 생성</h4>
+        <p>DALL-E 이미지 생성<br>용도: 썸네일, 아이콘 생성</p>
+      </div>
+      <div class="feature-card">
+        <h4>👁️ 이미지 분석</h4>
+        <p>GPT-4 Vision<br>용도: 이미지 내용 분석, OCR</p>
+      </div>
+      <div class="feature-card">
+        <h4>🎤 음성 인식</h4>
+        <p>Whisper (음성→텍스트)<br>용도: 회의록 자동 작성, STT</p>
+      </div>
+      <div class="feature-card">
+        <h4>🔊 음성 합성</h4>
+        <p>TTS (텍스트→음성)<br>용도: 음성 안내, 오디오북</p>
+      </div>
+      <div class="feature-card">
+        <h4>📊 임베딩</h4>
+        <p>텍스트 벡터화<br>용도: 검색, 유사도 분석</p>
+      </div>
+    </div>
+
+    <h3>1.3 신청 후</h3>
+    <ul>
+      <li>신청 상태: <span class="badge badge-orange">대기중</span> → <span class="badge badge-green">승인됨</span> / <span class="badge badge-red">거절됨</span></li>
+      <li>승인되면 API 키가 자동으로 발급됩니다</li>
+      <li>발급된 키는 <strong>한 번만</strong> 확인 가능하니 반드시 저장하세요!</li>
+    </ul>
+
+    <!-- Section 2 -->
+    <h2 id="section2">2. 발급받은 키 확인하기</h2>
+    
+    <h3>2.1 키 목록 화면</h3>
+    <p><span class="badge badge-blue">API 키</span> 메뉴에서 내 팀의 발급된 키를 확인할 수 있습니다.</p>
+    
+    <table>
+      <tr>
+        <th>항목</th>
+        <th>설명</th>
+      </tr>
+      <tr>
+        <td><strong>키 프리픽스</strong></td>
+        <td>키의 앞부분 (전체 키는 발급 시에만 확인 가능)</td>
+      </tr>
+      <tr>
+        <td><strong>상태</strong></td>
+        <td><span class="badge badge-green">활성</span> 사용 가능 / <span class="badge badge-red">폐기됨</span> 사용 불가</td>
+      </tr>
+      <tr>
+        <td><strong>허용 기능</strong></td>
+        <td>이 키로 사용 가능한 기능</td>
+      </tr>
+      <tr>
+        <td><strong>월 한도</strong></td>
+        <td>이 키의 월간 사용 한도 (USD)</td>
+      </tr>
+    </table>
+
+    <div class="warning-box">
+      <strong>⚠️ 중요:</strong> 전체 API 키는 <strong>발급 시점에만</strong> 확인할 수 있습니다. 반드시 안전한 곳에 저장하세요!
+    </div>
+
+    <!-- Section 3 -->
+    <h2 id="section3">3. 키 분실 시 조회 요청하기</h2>
+    
+    <p>키를 분실한 경우, 관리자에게 키 조회를 요청할 수 있습니다.</p>
+    
+    <h3>3.1 키 조회 요청</h3>
+    <p><span class="badge badge-blue">API 키</span> 메뉴에서 해당 키의 <strong>[ 🔍 키 조회 요청 ]</strong> 버튼을 클릭합니다.</p>
+    
+    <div class="ui-box">┌─────────────────────────────────────────┐
+│  API 키 조회 요청                  [X]  │
+├─────────────────────────────────────────┤
+│                                         │
+│  대상 키: team-sk-a1b2...               │
+│                                         │
+│  요청 사유                              │
+│  ┌─────────────────────────────────┐   │
+│  │ 예: 키를 분실하여 재확인 필요    │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│       [ 취소 ]    [ 요청 ]              │
+└─────────────────────────────────────────┘</div>
+
+    <h3>3.2 요청 처리 후</h3>
+    <ul>
+      <li>관리자가 승인하면 <strong>키 조회</strong> 버튼이 활성화됩니다</li>
+      <li>승인된 키 조회는 <strong>1회만</strong> 가능합니다</li>
+      <li>조회 후에는 다시 요청해야 합니다</li>
+    </ul>
+
+    <!-- Section 4 -->
+    <h2 id="section4">4. API 호출하기</h2>
+    
+    <p>발급받은 키로 OpenAI API를 호출하는 방법입니다.</p>
+    
+    <h3>4.1 Gateway 주소</h3>
+    <div class="gateway-url">환경 변수 VITE_GATEWAY_URL로 설정된 Gateway URL을 사용하세요.<br>예: https://your-gateway-domain.com</div>
+
+    <h3>4.2 Chat API 호출 (GPT 대화)</h3>
+    <div class="code-block"><span class="keyword">curl</span> -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/chat/completions \
+  -H <span class="string">"Authorization: Bearer team-sk-your-api-key"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{
+    "model": "gpt-4.1",
+    "messages": [
+      {"role": "user", "content": "안녕하세요!"}
+    ]
+  }'</span></div>
+
+    <h3>4.3 이미지 생성 (DALL-E)</h3>
+    <div class="code-block"><span class="keyword">curl</span> -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/images/generations \
+  -H <span class="string">"Authorization: Bearer team-sk-your-api-key"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{
+    "model": "dall-e-3",
+    "prompt": "귀여운 고양이 일러스트",
+    "n": 1,
+    "size": "1024x1024"
+  }'</span></div>
+
+    <h3>4.4 음성 합성 (TTS)</h3>
+    <div class="code-block"><span class="keyword">curl</span> -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/audio/speech \
+  -H <span class="string">"Authorization: Bearer team-sk-your-api-key"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{
+    "model": "tts-1",
+    "input": "안녕하세요, 반갑습니다!",
+    "voice": "alloy"
+  }'</span> \
+  --output speech.mp3</div>
+
+    <h3>4.5 Python 예제</h3>
+    <div class="code-block"><span class="keyword">import</span> openai
+
+<span class="comment"># Gateway 주소로 설정 (환경 변수 사용 권장)</span>
+<span class="keyword">import</span> os
+client = openai.<span class="function">OpenAI</span>(
+    api_key=<span class="string">"team-sk-your-api-key"</span>,
+    base_url=os.getenv(<span class="string">"GATEWAY_URL"</span>, <span class="string">"https://your-gateway-domain.com"</span>) + <span class="string">"/v1"</span>
+)
+
+<span class="comment"># Chat 호출</span>
+response = client.chat.completions.<span class="function">create</span>(
+    model=<span class="string">"gpt-4.1"</span>,
+    messages=[
+        {<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: <span class="string">"안녕하세요!"</span>}
+    ]
+)
+
+<span class="function">print</span>(response.choices[0].message.content)</div>
+
+    <h3>4.6 TypeScript 예제 (openai 패키지)</h3>
+    <div class="code-block"><span class="keyword">import</span> OpenAI <span class="keyword">from</span> <span class="string">'openai'</span>;
+
+<span class="comment">// Gateway 주소로 설정 (환경 변수 사용 권장)</span>
+<span class="keyword">const</span> client = <span class="keyword">new</span> <span class="function">OpenAI</span>({
+  apiKey: <span class="string">'team-sk-your-api-key'</span>,
+  baseURL: (process.env.VITE_GATEWAY_URL || <span class="string">'https://your-gateway-domain.com'</span>) + <span class="string">'/v1'</span>,
+});
+
+<span class="keyword">async function</span> <span class="function">main</span>() {
+  <span class="comment">// Chat 호출</span>
+  <span class="keyword">const</span> response = <span class="keyword">await</span> client.chat.completions.<span class="function">create</span>({
+    model: <span class="string">'gpt-4.1'</span>,
+    messages: [
+      { role: <span class="string">'user'</span>, content: <span class="string">'안녕하세요!'</span> }
+    ],
+  });
+
+  <span class="function">console.log</span>(response.choices[0].message.content);
+}
+
+<span class="function">main</span>();</div>
+    <p style="margin-top: 10px; font-size: 13px; color: #666;">
+      💡 설치: <code style="background: #f1f1f1; padding: 2px 8px; border-radius: 4px;">npm install openai</code>
+    </p>
+
+    <h3>4.7 TypeScript 예제 (fetch 사용)</h3>
+    <div class="code-block"><span class="comment">// openai 패키지 없이 fetch로 직접 호출</span>
+<span class="keyword">const</span> GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || <span class="string">'https://your-gateway-domain.com'</span>;
+
+<span class="keyword">async function</span> <span class="function">chatWithGPT</span>(message: <span class="keyword">string</span>): Promise&lt;<span class="keyword">string</span>&gt; {
+  <span class="keyword">const</span> response = <span class="keyword">await</span> <span class="function">fetch</span>(`${GATEWAY_URL}/v1/chat/completions`, {
+    method: <span class="string">'POST'</span>,
+    headers: {
+      <span class="string">'Authorization'</span>: <span class="string">'Bearer team-sk-your-api-key'</span>,
+      <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>,
+    },
+    body: JSON.<span class="function">stringify</span>({
+      model: <span class="string">'gpt-4.1'</span>,
+      messages: [{ role: <span class="string">'user'</span>, content: message }],
+    }),
+  });
+
+  <span class="keyword">const</span> data = <span class="keyword">await</span> response.<span class="function">json</span>();
+  <span class="keyword">return</span> data.choices[0].message.content;
+}
+
+<span class="comment">// 사용 예시</span>
+<span class="keyword">const</span> answer = <span class="keyword">await</span> <span class="function">chatWithGPT</span>(<span class="string">'안녕하세요!'</span>);
+<span class="function">console.log</span>(answer);</div>
+
+    <h3>4.8 사용 가능한 엔드포인트</h3>
+    <table>
+      <tr>
+        <th>기능</th>
+        <th>Method</th>
+        <th>Path</th>
+      </tr>
+      <tr>
+        <td>Chat (GPT)</td>
+        <td>POST</td>
+        <td><code>/v1/chat/completions</code></td>
+      </tr>
+      <tr>
+        <td>이미지 생성</td>
+        <td>POST</td>
+        <td><code>/v1/images/generations</code></td>
+      </tr>
+      <tr>
+        <td>이미지 분석</td>
+        <td>POST</td>
+        <td><code>/v1/chat/completions</code> (이미지 URL 포함)</td>
+      </tr>
+      <tr>
+        <td>음성 인식</td>
+        <td>POST</td>
+        <td><code>/v1/audio/transcriptions</code></td>
+      </tr>
+      <tr>
+        <td>음성 합성</td>
+        <td>POST</td>
+        <td><code>/v1/audio/speech</code></td>
+      </tr>
+      <tr>
+        <td>임베딩</td>
+        <td>POST</td>
+        <td><code>/v1/embeddings</code></td>
+      </tr>
+    </table>
+
+    <!-- Section 5 -->
+    <h2 id="section5">5. 에러 해결</h2>
+    
+    <h3>5.1 자주 발생하는 에러</h3>
+    <table>
+      <tr>
+        <th>에러 코드</th>
+        <th>메시지</th>
+        <th>해결 방법</th>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">401</span></td>
+        <td>Unauthorized</td>
+        <td>API 키가 올바른지 확인하세요</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">403</span></td>
+        <td>Feature not allowed</td>
+        <td>해당 기능이 허용되지 않은 키입니다. 관리자에게 문의하세요</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">403</span></td>
+        <td>Model not allowed</td>
+        <td>해당 모델이 허용되지 않은 키입니다. 관리자에게 문의하세요</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">403</span></td>
+        <td>Budget exceeded</td>
+        <td>월 한도를 초과했습니다. 관리자에게 문의하세요</td>
+      </tr>
+    </table>
+
+    <h3>5.2 키가 작동하지 않을 때</h3>
+    <ol class="step-list">
+      <li><strong>키 상태 확인:</strong> [API 키] 메뉴에서 키가 <span class="badge badge-green">활성</span> 상태인지 확인</li>
+      <li><strong>허용 기능 확인:</strong> 사용하려는 기능이 허용되어 있는지 확인</li>
+      <li><strong>허용 모델 확인:</strong> 사용하려는 모델이 허용되어 있는지 확인</li>
+      <li><strong>월 한도 확인:</strong> 월 사용량이 한도를 초과하지 않았는지 확인</li>
+    </ol>
+
+    <h3>5.3 새 키가 필요한 경우</h3>
+    <ul>
+      <li>키가 폐기된 경우</li>
+      <li>다른 기능이 필요한 경우</li>
+      <li>한도 증액이 필요한 경우</li>
+    </ul>
+    <div class="info-box">
+      → <strong>[ + 키 발급 신청 ]</strong> 버튼으로 새 키를 요청하세요
+    </div>
+
+    <!-- Section 6 -->
+    <div id="section6" style="margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 10px;">
+      <h2 style="color: #1a1a2e; margin: 0 0 10px 0;">📞 문의</h2>
+      <p style="margin: 0; color: #333;">
+        문제가 해결되지 않으면 관리자에게 문의하세요: <strong style="color: #4361ee;">정예진 (jyj9975@neungyule.com)</strong>
+      </p>
+    </div>
+
+    <div class="footer">
+      마지막 업데이트: 2025-01
+    </div>
+  </div>
+</body>
+</html>
