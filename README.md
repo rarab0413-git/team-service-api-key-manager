@@ -2,6 +2,13 @@
 
 팀별 API 키 발급 및 중앙 Gateway를 통한 OpenAI API 관리 시스템
 
+> **`_v1` 브랜치**  
+> LangChain 기반 **사용자 매뉴얼 RAG**(Chroma 색인 + `POST /api/manual-rag/chat`)·**사용자 도우미** UI가 포함됩니다. 프론트는 **Firebase Auth** 및 메인 도메인 토큰 동기화(`VITE_TOKEN_PROVIDER_URL` 등)를 사용합니다.  
+> - 백엔드: `npm install` 시 `backend/.npmrc`의 `legacy-peer-deps=true`로 `@langchain/community` 피어 이슈를 우회합니다.  
+> - Chroma: `docker run -p 8000:8000 chromadb/chroma:latest` 후 `CHROMA_URL=http://127.0.0.1:8000`.  
+> - 색인: `MANUAL_RAG_REINDEX_SECRET` 설정 후 `POST /api/manual-rag/reindex` + 헤더 `X-Manual-Rag-Secret`.  
+> 상세는 `backend/.env.sample`, `frontend/.env.sample`, `docs/USER_MANUAL.md`를 참고하세요.
+
 ## 아키텍처
 
 ```
@@ -16,7 +23,7 @@
 
 ### 핵심 포인트
 - Real key는 Gateway에만 존재 (팀에게 노출되지 않음)
-- Firebase Authentication을 통한 사용자 인증
+- Firebase Authentication 및 메인 도메인과의 토큰 동기화(iframe/postMessage) 지원
 - 팀별 예산 및 모델 접근 제어
 - 기능별 API 키 발급 (chat, image, audio, embeddings 등)
 - 모든 사용량 자동 로깅
@@ -28,6 +35,7 @@
 - NestJS 10
 - MySQL + mysql2/promise (Native SQL)
 - AES-256-GCM (API 키 암호화)
+- LangChain + Chroma (`manual-rag` 모듈)
 
 ### Frontend
 - React 18 + TypeScript
@@ -74,29 +82,14 @@ ENCRYPTION_KEY=your_64_character_hex_string_here
 # frontend/.env 파일 생성
 cp frontend/.env.sample frontend/.env
 
-# Firebase 설정 (Firebase Console에서 프로젝트 설정 확인)
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
-VITE_FIREBASE_APP_ID=your_firebase_app_id
-VITE_FIREBASE_MEASUREMENT_ID=your_firebase_measurement_id
-VITE_FIREBASE_DATABASE_URL=your_firebase_database_url
-
-# Gateway API Base URL
-VITE_GATEWAY_URL=https://your-gateway-domain.com
-
-# Cross-Origin Token Provider 설정 (선택사항)
-VITE_TOKEN_PROVIDER_URL=https://your-main-domain.com/token-provider
-VITE_MAIN_DOMAIN_ORIGIN=https://your-main-domain.com
+# Firebase·Gateway·토큰 공급자 URL 등 — frontend/.env.sample 주석 참고
 ```
 
 ### 3. Backend 실행
 
 ```bash
 cd backend
-npm install
+npm install   # .npmrc에서 legacy-peer-deps 적용
 npm run start:dev
 ```
 
@@ -164,7 +157,57 @@ PUT    /api/api-keys/:id/models   # 허용 모델 수정
 GET    /api/usage/team/:id               # 팀 사용 로그
 GET    /api/usage/team/:id/current-month # 이번 달 사용량
 GET    /api/usage/team/:id/monthly       # 월별 사용량 이력
+
+# Manual RAG (USER_MANUAL → Chroma)
+POST   /api/manual-rag/reindex           # 헤더 X-Manual-Rag-Secret
+POST   /api/manual-rag/chat              # Body { "message": string }
 ```
+
+## 사용자 도우미 (LangChain · Manual RAG)
+
+`_v1`에 추가된 **사용자 도우미**는 사내 매뉴얼(`docs/USER_MANUAL.md` 등)을 **Chroma 벡터 DB**에 올린 뒤, 질문과 유사한 구절을 **LangChain**으로 검색하고 **채팅 LLM**이 매뉴얼 근거만으로 답하는 **RAG(Retrieval-Augmented Generation)** 흐름입니다. 관리 콘솔 프론트에서는 사이드바 **「사용자 도우미」** 메뉴(`manual-chat` 페이지)에서 동일 API를 호출합니다.
+
+### 동작 개요
+
+1. **색인(ingest)**: 매뉴얼 마크다운을 청크로 나누고, OpenAI 호환 임베딩으로 벡터화한 뒤 Chroma 컬렉션에 저장합니다.
+2. **채팅(query)**: 사용자 질문으로 Chroma에서 상위 `MANUAL_RAG_TOP_K`개 문서를 **유사도 검색**하고, 그 텍스트를 `[컨텍스트]`로 넣어 `ChatOpenAI`가 한국어로 답을 생성합니다. 응답에는 참고한 청크 메타데이터(`chunkId`, `section`, `subsection`)가 `sources`로 함께 반환됩니다.
+3. **안전 장치**: 시스템 프롬프트상 컨텍스트 밖 추측·보완은 하지 않도록 되어 있으며, 매뉴얼에 없으면 안내 문구로 응답합니다.
+
+백엔드 구현은 NestJS 모듈 `backend/src/manual-rag/` 에 있으며, `@langchain/community`(Chroma), `@langchain/openai`(Chat), 공유 임베딩 팩토리 등을 사용합니다.
+
+### 사전 준비
+
+- **Chroma**: 예) `docker run -p 8000:8000 chromadb/chroma:latest` 후 `CHROMA_URL`을 해당 호스트에 맞게 설정합니다.
+- **환경 변수**: `backend/.env.sample`의 **Manual RAG** 블록을 참고합니다. 요약하면 다음이 있습니다.
+  - **벡터/색인**: `CHROMA_URL`, `CHROMA_COLLECTION_NAME`, 임베딩용 `EMBEDDING_*` / `OPENAI_API_KEY`(직접 OpenAI 사용 시)
+  - **채팅 LLM**: `MANUAL_RAG_CHAT_MODEL`, `MANUAL_RAG_CHAT_TIMEOUT_MS`, `MANUAL_RAG_TOP_K`
+  - **게이트웨이 분리**: 임베딩과 동일 OpenAI 호환 Gateway를 쓰거나, 채팅만 별도로 `RAG_CHAT_GATEWAY_BASE_URL` + `RAG_CHAT_GATEWAY_API_KEY`(가상 팀 키 등)를 둘 수 있습니다. 자세한 우선순위는 `ManualRagQueryService` 주석과 `.env.sample`을 따릅니다.
+- **의존성 설치**: 백엔드 루트의 `backend/.npmrc`에 `legacy-peer-deps=true`가 있어 `@langchain/community` 피어 의존성 경고를 우회합니다.
+
+### 매뉴얼 색인 방법
+
+- **HTTP**: `MANUAL_RAG_REINDEX_SECRET` 설정 후  
+  `POST /api/manual-rag/reindex` + 헤더 `X-Manual-Rag-Secret: <동일 값>`
+- **스크립트**: `cd backend && npm run ingest:manual` (로컬 색인 스크립트, `package.json`의 `ingest:manual` 참고)
+
+색인이 끝나지 않았거나 Chroma가 내려가 있으면 채팅 시 검색·응답이 실패할 수 있으므로, 운영 시 Chroma 가용성과 재색인 절차를 맞춰 두는 것이 좋습니다.
+
+### 채팅 API
+
+| 항목 | 내용 |
+|------|------|
+| 엔드포인트 | `POST /api/manual-rag/chat` |
+| 인증 | 프론트 앱에서는 로그인 후에만 **사용자 도우미** 화면으로 들어가며, 호출은 동일 Origin의 `/api` 프록시를 통해 갑니다. 백엔드 컨트롤러에는 **채팅 전용 인증 가드가 없을 수 있으므로**, 인터넷에 노출할 때는 리버스 프록시·방화벽 등으로 API 접근을 제한하는 것을 권장합니다. **reindex**와 달리 `X-Manual-Rag-Secret`는 필요 없습니다. |
+| 요청 본문 | `{ "message": string }` (최대 2000자, class-validator 검증) |
+| 응답 | `{ "answer": string, "sources": [{ "chunkId", "section", "subsection" }, ...] }` |
+
+### 프론트엔드
+
+- 경로: `frontend/src/pages/manual-chat.tsx`
+- API 래퍼: `frontend/src/lib/api.ts`의 `manualRagApi.chat`
+- 로그인 후 사이드바에서 **사용자 도우미**로 이동해 질문을 입력하면 위 채팅 API로 연결됩니다.
+
+매뉴얼 본문·플레이스홀더 URL 등 문서 작업은 `docs/USER_MANUAL.md`를 참고하세요.
 
 ## 데이터 모델
 
@@ -257,6 +300,11 @@ team-service-api-key-manager/
 │   │   │   ├── usage.service.ts
 │   │   │   ├── usage.repository.ts
 │   │   │   └── usage.module.ts
+│   │   ├── manual-rag/            # USER_MANUAL → Chroma, LangChain RAG 채팅
+│   │   │   ├── manual-rag.controller.ts
+│   │   │   ├── manual-rag-query.service.ts
+│   │   │   ├── manual-ingest.service.ts
+│   │   │   └── ...
 │   │   ├── app.module.ts
 │   │   └── main.ts
 │   └── database/
@@ -276,6 +324,7 @@ team-service-api-key-manager/
         │   ├── dashboard.tsx
         │   ├── teams.tsx
         │   ├── api-keys.tsx
+        │   ├── manual-chat.tsx       # 사용자 도우미 (RAG 채팅 UI)
         │   └── settings.tsx
         ├── lib/
         │   ├── api.ts

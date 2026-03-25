@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { User } from 'firebase/auth';
-import { 
-  subscribeToAuthState, 
+import {
+  subscribeToAuthState,
   syncAuthFromMainDomain,
   logout as firebaseLogout,
 } from '../lib/firebase';
@@ -16,22 +16,18 @@ interface SharedUser {
 export type UserRole = 'admin' | 'user';
 
 interface AuthState {
-  // Firebase 인증 정보
   firebaseUser: User | null;
   sharedUser: SharedUser | null;
-  
-  // DB 사용자 정보
+
   dbUser: DbUser | null;
-  
-  // 상태
+
   role: UserRole;
   teamId: number | null;
   teamName: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  needsTeamSelection: boolean;  // 팀 선택 필요 여부
-  
-  // Actions
+  needsTeamSelection: boolean;
+
   setDbUser: (dbUser: DbUser | null) => void;
   setNeedsTeamSelection: (needs: boolean) => void;
   initialize: () => () => void;
@@ -50,13 +46,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   needsTeamSelection: false,
 
-  setDbUser: (dbUser) => set({
-    dbUser,
-    role: dbUser?.role || 'user',
-    teamId: dbUser?.teamId || null,
-    teamName: dbUser?.teamName || null,
-    needsTeamSelection: !dbUser || dbUser.teamId === null,
-  }),
+  setDbUser: (dbUser) =>
+    set({
+      dbUser,
+      role: dbUser?.role || 'user',
+      teamId: dbUser?.teamId || null,
+      teamName: dbUser?.teamName || null,
+      needsTeamSelection: !dbUser || dbUser.teamId === null,
+    }),
 
   setNeedsTeamSelection: (needs) => set({ needsTeamSelection: needs }),
 
@@ -80,10 +77,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      // Firebase 로그아웃 + localStorage 삭제
       await firebaseLogout();
-      
-      // Store 상태 초기화
+
       set({
         firebaseUser: null,
         sharedUser: null,
@@ -95,7 +90,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         needsTeamSelection: false,
         isLoading: false,
       });
-      
+
       console.log('[Auth] Logged out successfully');
     } catch (error) {
       console.error('[Auth] Logout error:', error);
@@ -103,12 +98,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initialize: () => {
-    // Firebase 인증 상태 변경 구독
     const unsubscribe = subscribeToAuthState(async (user) => {
       let email: string | null = null;
 
       if (user) {
-        // 로컬 Firebase 인증 있음
         email = user.email;
         set({
           firebaseUser: user,
@@ -116,10 +109,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
         });
       } else {
-        // 로컬 인증 없음 → 메인 도메인에서 토큰 가져오기 시도
         console.log('[Auth] No local auth, trying to sync from main domain...');
         const sharedUser = await syncAuthFromMainDomain();
-        
+
         if (sharedUser) {
           email = sharedUser.email;
           set({
@@ -143,12 +135,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
 
-      // DB에서 사용자 정보 조회
       if (email) {
         try {
           console.log('[Auth] Fetching DB user for:', email);
           const dbUser = await usersApi.getByEmail(email);
-          
+
           if (dbUser) {
             console.log('[Auth] DB user found:', dbUser);
             set({
@@ -183,18 +174,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
     });
-    
+
     return unsubscribe;
   },
 }));
 
-// 권한 체크 헬퍼 함수
 export const useIsAdmin = () => useAuthStore((state) => state.role === 'admin');
-export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
-export const useUserEmail = () => useAuthStore((state) => 
-  state.firebaseUser?.email || state.sharedUser?.email || null
-);
+export const useIsAuthenticated = () =>
+  useAuthStore((state) => state.isAuthenticated);
+export const useUserEmail = () =>
+  useAuthStore(
+    (state) => state.firebaseUser?.email || state.sharedUser?.email || null,
+  );
 export const useUserTeamId = () => useAuthStore((state) => state.teamId);
 export const useUserTeamName = () => useAuthStore((state) => state.teamName);
-export const useNeedsTeamSelection = () => useAuthStore((state) => state.needsTeamSelection);
+export const useNeedsTeamSelection = () =>
+  useAuthStore((state) => state.needsTeamSelection);
 export const useDbUser = () => useAuthStore((state) => state.dbUser);

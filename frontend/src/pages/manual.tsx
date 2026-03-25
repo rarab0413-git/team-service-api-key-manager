@@ -506,7 +506,7 @@ console.log(answer);`}
         <Card className="p-6">
           <h2 className="text-xl font-bold text-white mb-2">📞 문의</h2>
           <p className="text-surface-300">
-            문제가 해결되지 않으면 관리자에게 문의하세요: <span className="text-brand-400">정예진 (jyj9975@neungyule.com)</span>
+            문제가 해결되지 않으면 조직 내 관리자에게 문의하세요.
           </p>
         </Card>
       </div>

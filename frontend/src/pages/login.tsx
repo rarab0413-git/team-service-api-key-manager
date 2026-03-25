@@ -15,11 +15,9 @@ export function LoginPage() {
 
     try {
       await login(email, password);
-      // 로그인 성공 시 onAuthStateChanged가 자동으로 상태 업데이트
     } catch (err) {
       console.error('Login error:', err);
       if (err instanceof Error) {
-        // Firebase 에러 메시지 변환
         if (err.message.includes('auth/invalid-credential')) {
           setError('이메일 또는 비밀번호가 올바르지 않습니다.');
         } else if (err.message.includes('auth/user-not-found')) {
@@ -41,16 +39,13 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-700/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Login Card */}
       <div className="w-full max-w-md relative">
         <div className="glass rounded-2xl p-8 shadow-2xl border border-surface-700/50">
-          {/* Logo */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 mb-4 animate-pulse-glow">
               <Zap className="w-8 h-8 text-white" />
@@ -59,7 +54,6 @@ export function LoginPage() {
             <p className="text-surface-400 mt-1">Key Manager에 로그인하세요</p>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-danger/10 border border-danger/30 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
@@ -67,7 +61,6 @@ export function LoginPage() {
             </div>
           )}
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-surface-300 mb-2">
@@ -119,7 +112,6 @@ export function LoginPage() {
             </button>
           </form>
 
-          {/* Footer */}
           <div className="mt-8 pt-6 border-t border-surface-700/50">
             <p className="text-center text-surface-500 text-sm">
               Firebase Auth로 인증됩니다
@@ -127,7 +119,6 @@ export function LoginPage() {
           </div>
         </div>
 
-        {/* Info Card */}
         <div className="mt-4 p-4 rounded-xl glass border border-surface-700/50">
           <p className="text-surface-400 text-xs text-center">
             관리자 권한이 필요한 기능은 승인된 계정으로만 접근 가능합니다

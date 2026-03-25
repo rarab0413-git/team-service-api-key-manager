@@ -7,6 +7,7 @@ import { TeamsPage } from './pages/teams';
 import { ApiKeysPage } from './pages/api-keys';
 import { SettingsPage } from './pages/settings';
 import { ManualPage } from './pages/manual';
+import { ManualChatPage } from './pages/manual-chat';
 import { LoginPage } from './pages/login';
 import { TeamSelectPage } from './pages/team-select';
 import { useAuthStore, useNeedsTeamSelection, useIsAdmin } from './store/auth-store';
@@ -46,9 +47,12 @@ function AuthenticatedApp() {
   }, [isAdmin, currentPage]);
 
   const renderPage = () => {
-    // 매뉴얼 페이지는 모든 사용자 접근 가능
+    // 매뉴얼·사용자 도우미는 모든 사용자 접근 가능
     if (currentPage === 'manual') {
       return <ManualPage />;
+    }
+    if (currentPage === 'manual-chat') {
+      return <ManualChatPage />;
     }
 
     // 관리자 전용 페이지 접근 제어

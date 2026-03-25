@@ -42,19 +42,31 @@ export class GatewayService {
       throw new UnauthorizedException('Missing or invalid Authorization header');
     }
 
-    const apiKey = bearerToken.replace('Bearer ', '');
+    const apiKey = bearerToken.replace('Bearer ', '').trim();
     
     // Extract prefix from the API key
+    // API key format: team-sk-{24자리}
+    // Prefix format: team-sk-{8자리}
     const parts = apiKey.split('-');
     if (parts.length < 3) {
+      this.logger.warn(`Invalid API key format: ${apiKey.substring(0, 20)}...`);
       throw new UnauthorizedException('Invalid API key format');
     }
     
     // Prefix is "team-sk-" + first 8 chars of unique part
-    const prefix = `${parts[0]}-${parts[1]}-${parts[2].substring(0, 8)}`;
+    const uniquePart = parts.slice(2).join('-'); // parts[2] 이후의 모든 부분을 합침
+    if (uniquePart.length < 8) {
+      this.logger.warn(`API key unique part too short: ${apiKey.substring(0, 20)}...`);
+      throw new UnauthorizedException('Invalid API key format');
+    }
+    
+    const prefix = `${parts[0]}-${parts[1]}-${uniquePart.substring(0, 8)}`;
+    
+    this.logger.debug(`Extracted prefix: ${prefix} from API key: ${apiKey.substring(0, 20)}...`);
     
     const keyRow = await this.apiKeysRepository.findActiveByPrefix(prefix);
     if (!keyRow) {
+      this.logger.warn(`API key not found for prefix: ${prefix}`);
       throw new UnauthorizedException('API key not found or inactive');
     }
 

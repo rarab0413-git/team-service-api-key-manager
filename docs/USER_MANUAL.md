@@ -1,6 +1,8 @@
 # 📚 API Gateway 사용자 매뉴얼
 
 > 이 문서는 팀 API 키를 발급받고 OpenAI API를 호출하는 방법을 안내합니다.
+>
+> **앱 내 「사용자 매뉴얼」 화면**은 이 파일을 자동으로 읽지 않습니다. 웹 UI에도 동일 내용을 반영하려면 `frontend/src/pages/manual.tsx`를 함께 수정해야 합니다.
 
 ---
 
@@ -9,9 +11,11 @@
 1. [API 키 발급 요청하기](#1-api-키-발급-요청하기)
 2. [발급받은 키 확인하기](#2-발급받은-키-확인하기)
 3. [키 분실 시 조회 요청하기](#3-키-분실-시-조회-요청하기)
-4. [API 호출하기](#4-api-호출하기)
-5. [에러 해결](#5-에러-해결)
-6. [문의](#6-문의)
+4. [가상 API 키 안내](#4-가상-api-키-안내)
+5. [API 호출하기](#5-api-호출하기)
+6. [예산 및 과금](#6-예산-및-과금)
+7. [에러 해결](#7-에러-해결)
+8. [문의](#8-문의)
 
 ---
 
@@ -82,6 +86,13 @@
 - 승인되면 API 키가 자동으로 발급됩니다
 - 발급된 키는 **한 번만** 확인 가능하니 반드시 저장하세요!
 
+### 1.5 키 발급 전 예산 협의 (장기·본격 사용 시)
+
+- **단순 테스트** 목적의 키는 소규모로 발급해 사용할 수 있습니다.
+- 다만 **장기적으로 서비스·업무에 계속 사용**할 계획이라면, 시스템에서 **팀 단위로 비용과 예산이 집계**됩니다. 키별 월 한도와 팀 월 예산에 따라 사용이 제한됩니다.
+- **키 발급(또는 팀 예산·한도 반영) 전에**, 팀에서 **월간 최대 상한에 해당하는 예산(USD)** 을 내부적으로 정한 뒤 **관리자에게 전달**해 주시기 바랍니다. (예산 협의 없이 본격 운영만으로 사용량이 늘어나면 한도 초과로 중단될 수 있습니다.)
+- 상세한 과금·집계 방식은 **[6. 예산 및 과금](#6-예산-및-과금)** 을 참고하세요.
+
 ---
 
 ## 2. 발급받은 키 확인하기
@@ -151,21 +162,57 @@
 
 ---
 
-## 4. API 호출하기
+## 4. 가상 API 키 안내
 
-발급받은 키로 OpenAI API를 호출하는 방법입니다.
+### 4.1 가상 API 키(Virtual Key)란?
 
-### 4.1 Gateway 주소
+서비스에서 발급하는 키는 **OpenAI에서 직접 발급하는 API 키(`sk-...`)가 아닙니다.**
+
+| 구분 | 설명 |
+|------|------|
+| **가상 키** | Key Manager에서 발급되는 `team-sk-...` 형식의 **사내 식별용 키**입니다. |
+| **역할** | 요청 시 게이트웨이가 이 키로 **어느 팀·어느 키 권한인지**를 확인한 뒤, 서버에 설정된 OpenAI 자격 증명으로 실제 OpenAI API를 대신 호출합니다. |
+| **OpenAI와의 관계** | [platform.openai.com](https://platform.openai.com)의 “내 API 키”와는 **별개**입니다. 가상 키를 OpenAI 공식 사이트에 등록하거나, n8n 등에서 **기본 OpenAI 엔드포인트만** 쓰면 인증 오류가 납니다. |
+
+### 4.2 보안 및 유출 시 조치
+
+가상 키는 **팀·프로젝트 단위 접근 권한**을 나타내므로, **OpenAI 본사 키와 달리 유출 시에도 즉시 악용될 수 있습니다.**
+
+- GitHub·메일·채팅 등에 키 전체가 노출되었거나 유출이 의심되면 **즉시 관리자에게 연락**하세요.
+- 관리자는 Key Manager에서 해당 키를 **폐기(삭제)** 처리할 수 있습니다. 폐기 후에는 **새 키 발급 신청**이 필요합니다.
+- 키는 **안전한 비밀 저장소**(자격 증명 관리, 환경 변수 등)에만 보관하고, 문서나 스크린샷에 노출하지 마세요.
+
+---
+
+## 5. API 호출하기
+
+발급받은 키로 OpenAI API와 **동일한 경로**로 호출하되, **반드시 아래 Gateway 주소**를 사용합니다.
+
+### 5.1 Gateway 주소
 
 ```
-환경 변수 VITE_GATEWAY_URL로 설정된 Gateway URL을 사용하세요.
-예: https://your-gateway-domain.com
+https://your-api-gateway.example.com
 ```
 
-### 4.2 Chat API 호출 (GPT 대화)
+### 5.2 n8n 연동
+
+n8n의 **OpenAI** 관련 노드(예: OpenAI, Chat OpenAI, LangChain OpenAI 등)는 기본으로 OpenAI 공식 URL을 사용합니다. **반드시 아래처럼 자격 증명(Credential)을 수정**해야 합니다.
+
+| 항목 | 입력 값 |
+|------|---------|
+| **API Key** | Key Manager에서 발급받은 **`team-sk-...` 전체** (앞뒤 공백·줄바꿈 없이 붙여넣기) |
+| **Base URL** (또는 Host URL, API URL 등 노드/버전에 따라 표기 상이) | **`https://your-api-gateway.example.com/v1`** |
+
+**주의**
+
+- `https://api.openai.com/v1` 또는 플랫폼 기본값으로 두면 **“Incorrect API key”** 등 오류가 납니다. **항상 위 Gateway Base URL**을 사용하세요.
+- 일부 버전에서는 URL 끝에 **`/v1`** 이 포함되어야 합니다. Python/TypeScript 예제와 동일하게 **`...example.com/v1`** 까지 입력합니다.
+- n8n에서 **도메인 허용 목록**(Allowed HTTP Request Domains 등)을 쓰는 경우, `your-api-gateway.example.com` 을 허용해야 합니다.
+
+### 5.3 Chat API 호출 (GPT 대화)
 
 ```bash
-curl -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/chat/completions \
+curl -X POST https://your-api-gateway.example.com/v1/chat/completions \
   -H "Authorization: Bearer team-sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -176,10 +223,10 @@ curl -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/chat/comple
   }'
 ```
 
-### 4.3 이미지 생성 (DALL-E)
+### 5.4 이미지 생성 (DALL-E)
 
 ```bash
-curl -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/images/generations \
+curl -X POST https://your-api-gateway.example.com/v1/images/generations \
   -H "Authorization: Bearer team-sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -190,10 +237,10 @@ curl -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/images/gene
   }'
 ```
 
-### 4.4 음성 합성 (TTS)
+### 5.5 음성 합성 (TTS)
 
 ```bash
-curl -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/audio/speech \
+curl -X POST https://your-api-gateway.example.com/v1/audio/speech \
   -H "Authorization: Bearer team-sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -204,16 +251,15 @@ curl -X POST ${VITE_GATEWAY_URL:-https://your-gateway-domain.com}/v1/audio/speec
   --output speech.mp3
 ```
 
-### 4.5 Python 예제
+### 5.6 Python 예제
 
 ```python
 import openai
 
-# Gateway 주소로 설정 (환경 변수 사용 권장)
-import os
+# Gateway 주소로 설정
 client = openai.OpenAI(
     api_key="team-sk-your-api-key",
-    base_url=os.getenv("GATEWAY_URL", "https://your-gateway-domain.com") + "/v1"
+    base_url="https://your-api-gateway.example.com/v1"
 )
 
 # Chat 호출
@@ -227,15 +273,15 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-### 4.6 TypeScript 예제 (openai 패키지)
+### 5.7 TypeScript 예제 (openai 패키지)
 
 ```typescript
 import OpenAI from 'openai';
 
-// Gateway 주소로 설정 (환경 변수 사용 권장)
+// Gateway 주소로 설정
 const client = new OpenAI({
   apiKey: 'team-sk-your-api-key',
-  baseURL: (process.env.VITE_GATEWAY_URL || 'https://your-gateway-domain.com') + '/v1',
+  baseURL: 'https://your-api-gateway.example.com/v1',
 });
 
 async function main() {
@@ -255,14 +301,12 @@ main();
 
 > 💡 설치: `npm install openai`
 
-### 4.7 TypeScript 예제 (fetch 사용)
+### 5.8 TypeScript 예제 (fetch 사용)
 
 ```typescript
 // openai 패키지 없이 fetch로 직접 호출
-const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'https://your-gateway-domain.com';
-
 async function chatWithGPT(message: string): Promise<string> {
-  const response = await fetch(`${GATEWAY_URL}/v1/chat/completions`, {
+  const response = await fetch('https://your-api-gateway.example.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': 'Bearer team-sk-your-api-key',
@@ -283,7 +327,7 @@ const answer = await chatWithGPT('안녕하세요!');
 console.log(answer);
 ```
 
-### 4.8 사용 가능한 엔드포인트
+### 5.9 사용 가능한 엔드포인트
 
 | 기능 | Method | Path |
 |------|--------|------|
@@ -296,9 +340,88 @@ console.log(answer);
 
 ---
 
-## 5. 에러 해결
+## 6. 예산 및 과금
 
-### 5.1 자주 발생하는 에러
+### 6.0 키 발급·운영 시 비용 처리 안내
+
+| 구분 | 안내 |
+|------|------|
+| **테스트용 발급** | 단순 기능 확인·PoC 등 **짧은 기간·소규모 테스트**를 위한 키 발급은 가능할 수 있습니다. 이 경우에도 호출은 팀·키에 연결되어 사용량이 기록됩니다. |
+| **장기·본격 서비스 이용** | 실제 서비스나 지속적인 업무에 사용할 경우, **팀별로 비용과 예산이 집계·관리**됩니다. 월 한도를 넘으면 해당 기간 동안 API 사용이 제한될 수 있습니다. |
+| **발급 전 조치** | 본격 운영에 앞서 **키 발급 신청 전**에 팀에서 **월간 최대 상한에 해당하는 예산(USD)** 을 확정하고, **관리자에게 전달**해 주시기 바랍니다. 관리자는 전달받은 범위를 바탕으로 팀 월 예산·키별 월 한도 등을 설정합니다. |
+
+> 💡 **요약:** 테스트는 제한적으로 가능하나, **장기적으로 서비스에 쓸 계획이면** 반드시 **예산 상한을 정해 관리자에게 먼저 알려** 주세요.
+
+### 6.1 키 유효기간·사용 범위
+
+| 항목 | 설명 |
+|------|------|
+| **키 유효기간** | 가상 키 자체에 **만료일은 없습니다.** 관리자가 폐기하기 전까지 동일 키를 사용할 수 있습니다. |
+| **사용 한도** | **팀 월 예산(USD)** 및 **키별 월 한도(USD)** 범위 안에서만 사용 가능합니다. 한도를 넘기면 해당 월에는 `403` (Budget exceeded) 로 차단될 수 있습니다. |
+| **월 단위 갱신** | 사용량 집계는 **달력 월(매월 1일~말일) 기준**으로 초기화됩니다. 새 달이 되면 해당 월의 누적 사용량이 0부터 다시 집계됩니다. |
+| **결제** | 조직 단위 **선불·계약 범위** 내에서 게이트웨이가 OpenAI 등에 과금됩니다. **개별 사용자가 호출할 때마다 별도 결제를 하지는 않습니다.** |
+
+### 6.2 비용 산정 방식 (토큰·기타)
+
+- **Chat / 이미지 분석 / 임베딩(토큰 기반)**  
+  OpenAI 응답의 **프롬프트(Prompt) 토큰 수**와 **완성(Completion) 토큰 수**를 기준으로, 아래 **모델별 단가(1K 토큰당 USD)** 로 곱해 **추정 비용(USD)** 을 계산합니다.
+
+  **공식 (텍스트·채팅 계열)**
+
+  ```
+  비용(USD) = (프롬프트 토큰 ÷ 1000 × 프롬프트 단가) + (완성 토큰 ÷ 1000 × 완성 단가)
+  ```
+
+- **이미지 생성 (DALL·E)**  
+  **이미지 1장당** 고정 단가(해상도별 상이).
+
+- **음성**  
+  - **Whisper(전사)**: 오디오 **길이(분)** 기준  
+  - **TTS**: **입력 문자 수(1K자당)** 기준
+
+### 6.3 모델별 단가 표 (참고)
+
+아래는 게이트웨이 사용량 집계에 사용하는 **참고 단가(1K 토큰당 USD)** 입니다. 실제 청구·집계는 시스템에 반영된 단가를 따릅니다.
+
+| 모델 | 프롬프트 (USD/1K tokens) | 완성 (USD/1K tokens) |
+|------|--------------------------|---------------------|
+| gpt-4.1 | 0.002 | 0.008 |
+| gpt-4.1-turbo | 0.001 | 0.004 |
+| gpt-4.1-mini | 0.0004 | 0.0016 |
+| gpt-4.1-nano | 0.0001 | 0.0004 |
+| gpt-4o | 0.005 | 0.015 |
+| gpt-4o-mini | 0.00015 | 0.0006 |
+| gpt-4-turbo | 0.01 | 0.03 |
+| gpt-4 | 0.03 | 0.06 |
+| gpt-3.5-turbo | 0.0005 | 0.0015 |
+
+목록에 없는 모델은 시스템 기본 단가로 산정될 수 있습니다. 임베딩 등 다른 API도 동일하게 **토큰 사용량**을 기준으로 집계합니다.
+
+### 6.4 이미지·음성 단가 (참고)
+
+**이미지 생성 (이미지당 USD)**
+
+| 모델 | 해상도 | USD/장 |
+|------|--------|--------|
+| dall-e-3 | 1024×1024 | 0.04 |
+| dall-e-3 | 1024×1792, 1792×1024 | 0.08 |
+| dall-e-2 | 256×256 | 0.016 |
+| dall-e-2 | 512×512 | 0.018 |
+| dall-e-2 | 1024×1024 | 0.02 |
+
+**음성**
+
+| 종류 | 모델 | 단가 |
+|------|------|------|
+| 음성→텍스트 (Whisper) | whisper-1 | **USD 0.006 / 분** |
+| 텍스트→음성 (TTS) | tts-1 | **USD 0.015 / 1K 문자** |
+| 텍스트→음성 (TTS HD) | tts-1-hd | **USD 0.03 / 1K 문자** |
+
+---
+
+## 7. 에러 해결
+
+### 7.1 자주 발생하는 에러
 
 | 에러 코드 | 메시지 | 해결 방법 |
 |----------|--------|----------|
@@ -307,14 +430,15 @@ console.log(answer);
 | **403** | Model not allowed | 해당 모델이 허용되지 않은 키입니다. 관리자에게 문의하세요 |
 | **403** | Budget exceeded | 월 한도를 초과했습니다. 관리자에게 문의하세요 |
 
-### 5.2 키가 작동하지 않을 때
+### 7.2 키가 작동하지 않을 때
 
 1. **키 상태 확인**: [API 키] 메뉴에서 키가 `활성` 상태인지 확인
 2. **허용 기능 확인**: 사용하려는 기능이 허용되어 있는지 확인
 3. **허용 모델 확인**: 사용하려는 모델이 허용되어 있는지 확인
 4. **월 한도 확인**: 월 사용량이 한도를 초과하지 않았는지 확인
+5. **n8n·외부 도구**: **Base URL**이 `https://your-api-gateway.example.com/v1` 인지 확인 (OpenAI 기본 URL이면 인증 오류가 납니다)
 
-### 5.3 새 키가 필요한 경우
+### 7.3 새 키가 필요한 경우
 
 - 키가 폐기된 경우
 - 다른 기능이 필요한 경우
@@ -324,12 +448,12 @@ console.log(answer);
 
 ---
 
-## 6. 문의
+## 8. 문의
 
 문제가 해결되지 않으면 관리자에게 문의하세요.
 
-📧 **정예진** (jyj9975@neungyule.com)
+📧 **관리자** (조직 내 안내된 연락처)
 
 ---
 
-*마지막 업데이트: 2025-01*
+*마지막 업데이트: 2026-03*

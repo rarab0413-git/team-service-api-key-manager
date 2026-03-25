@@ -34,7 +34,8 @@ export function SettingsPage() {
   const { modalOpen, openModal, closeModal } = useAppStore();
   const isAdmin = useIsAdmin();
   const { sharedUser, firebaseUser, dbUser } = useAuthStore();
-  const adminEmail = dbUser?.email || firebaseUser?.email || sharedUser?.email || '';
+  const adminEmail =
+    dbUser?.email || firebaseUser?.email || sharedUser?.email || '';
   
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);

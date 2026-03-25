@@ -250,6 +250,25 @@ export const keyIssueRequestsApi = {
     api.get<KeyRevealResponse>(`/key-issue-requests/${requestId}/reveal?email=${encodeURIComponent(email)}`).then(res => res.data),
 };
 
+// Manual RAG (USER_MANUAL Chroma + LLM)
+export interface ManualRagChatSource {
+  chunkId: string;
+  section: string;
+  subsection: string;
+}
+
+export interface ManualRagChatResponse {
+  answer: string;
+  sources: ManualRagChatSource[];
+}
+
+export const manualRagApi = {
+  chat: (data: { message: string }) =>
+    api
+      .post<ManualRagChatResponse>('/manual-rag/chat', data)
+      .then((res) => res.data),
+};
+
 export default api;
 
 

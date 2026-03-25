@@ -11,7 +11,8 @@ import {
   Shield,
   User,
   Building2,
-  Book
+  Book,
+  MessageCircle,
 } from 'lucide-react';
 import { teamsApi, keyRequestsApi, keyIssueRequestsApi, type Team, type KeyRequest, type KeyIssueRequest } from '../../lib/api';
 import { useAppStore } from '../../store/app-store';
@@ -71,11 +72,13 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         { id: 'api-keys', icon: Key, label: 'API 키 관리' },
         { id: 'settings', icon: Settings, label: '설정' },
         { id: 'manual', icon: Book, label: '사용자 매뉴얼' },
+        { id: 'manual-chat', icon: MessageCircle, label: '사용자 도우미' },
       ]
     : [
         { id: 'dashboard', icon: BarChart3, label: '대시보드' },
         { id: 'api-keys', icon: Key, label: 'API 키 발급' },
         { id: 'manual', icon: Book, label: '사용자 매뉴얼' },
+        { id: 'manual-chat', icon: MessageCircle, label: '사용자 도우미' },
       ];
 
   const handleLogout = async () => {

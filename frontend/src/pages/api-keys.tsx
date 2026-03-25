@@ -20,7 +20,12 @@ import { Modal } from '../components/ui/modal';
 import { Badge } from '../components/ui/badge';
 import { teamsApi, apiKeysApi, keyRequestsApi, keyIssueRequestsApi, type Team, type ApiKey, type KeyRequest, type KeyIssueRequest } from '../lib/api';
 import { useAppStore } from '../store/app-store';
-import { useIsAdmin, useUserTeamId, useUserTeamName, useAuthStore } from '../store/auth-store';
+import {
+  useIsAdmin,
+  useUserTeamId,
+  useUserTeamName,
+  useAuthStore,
+} from '../store/auth-store';
 
 const AVAILABLE_FEATURES = [
   { id: 'chat', label: 'Chat (GPT)', description: 'ChatGPT 대화 API' },
@@ -58,7 +63,8 @@ export function ApiKeysPage() {
   const userTeamId = useUserTeamId();
   const userTeamName = useUserTeamName();
   const { sharedUser, firebaseUser, dbUser } = useAuthStore();
-  const userEmail = dbUser?.email || firebaseUser?.email || sharedUser?.email || '';
+  const userEmail =
+    dbUser?.email || firebaseUser?.email || sharedUser?.email || '';
   
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [revealedApiKey, setRevealedApiKey] = useState<string | null>(null);
